@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaZ Programmers Manual</title>
+
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      text-align: justify;
+    }
+
+    .page {
+      rotate: 1deg;
+      max-width: 780px;
+      min-width: 780px;
+      max-height: 1090px;
+      min-height: 1090px;
+      margin: 30px auto;
+      background-repeat: no-repeat;
+      background-origin: padding-box;
+      background-size: contain;
+      background-color: white;
+      padding: 75px;
+      border: 1px solid #eeeeee;
+    }
+
+    .page-1 {
+      background: url(./images/page-bg-noise-01.png);
+    }
+
+    .page-2 {
+      background: url(./images/page-bg-noise-02.png);
+    }
+
+    .page-3 {
+      background: url(./images/page-bg-noise-03.png);
+    }
+
+    .page-4 {
+      background: url(./images/page-bg-noise-04.png);
+    }
+
+    .page-5 {
+      background: url(./images/page-bg-noise-05.png);
+    }
+
+    .page-6 {
+      background: url(./images/page-bg-noise-06.png);
+    }
+
+    th,
+    td,
+    tr,
+    table {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+      text-align: center;
+    }
+
+    table {
+      margin: 0 auto;
+    }
+
+    #palette-demo tr td {
+      width: 100px;
+      height: 100px;
+      font-weight: bold;
+    }
+
+    #palette-demo {
+      filter: grayscale(1);
+    }
+
+    table.keymap tr td {
+      width: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page page-1">
+    <center>
+      <h1>NovaZ Programmers Manual</h1>
+      Confidential - do not distribute
+    </center>
+
+    <h2>Section 1. System overview</h2>
+
+    <p>
+      NovaZ is based on a V80 CPU, a derivative of the legendary Zilog Z80 processor.
+
+    <h3>1.1. Memory map</h3>
+
+    <table>
+      <tr>
+        <th>Start address</th>
+        <th>End address</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td class="address">$0000</td>
+        <td class="address">$7FFF</td>
+        <td>
+          <b>Cartridge ROM.</b>
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$8000</td>
+        <td class="address">$9FFF</td>
+        <td>
+          <b>Video RAM.</b>
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$A000</td>
+        <td class="address">$BFFF</td>
+        <td>
+          Unmapped.
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$C000</td>
+        <td class="address">$DFFF</td>
+        <td>
+          <b>Work RAM.</b>
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$E000</td>
+        <td class="address">$FFFF</td>
+        <td>
+          Unmapped.
+        </td>
+      </tr>
+    </table>
+
+    <h3>1.3 IO map</h3>
+
+    <table>
+      <tr>
+        <th>Start address</th>
+        <th>End address</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td class="address">$00</td>
+        <td class="address">$07</td>
+        <td>
+          <b>Keyboard IO.</b>
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$08</td>
+        <td class="address">$FF</td>
+        <td>
+          Unmapped.
+        </td>
+      </tr>
+    </table>
+
+  </div>
+  <div class="page page-2">
+
+    <h2>Section 2. Video subsystem</h2>
+
+    NovaZ uses a proprietary <b>CWMWT3000</b><sup>TM</sup> Graphics chip. This enables it to have a wide range of
+    supported graphics modes. Current NovaZ devices are equipped with a development version, so not all graphics
+    modes are supported (or documented (or invented)). But due to OTA updating capabilities of
+    <b>CWMWT3000</b>, these will be added in the future.
+
+    <h3>2.1. Video modes</h3>
+
+    <h4>2.1.1 VM0 - 4bpp Linear</h4>
+
+    <p>
+      In this mode, screen resolution is 128x128. Each pixel can have one of the 16 colors from the NovaZ palette
+      (see Appendix A). Each byte in memory encodes the color of two pixels: low nibble encodes the left, and high
+      nibble the right pixel.
+
+    <p>
+      For example, writing the value <tt>$17</tt> to <tt>$8001</tt> would set the third
+      pixel on the first scanline to green (color 7), and the fourth to red (color 1).
+
+    <p>
+      This way, each scanline is represented using <tt>$40</tt> bytes, and the entire <tt>$2000</tt> of video
+      memory is used up by pixel data.
+
+  </div>
+  <div class="page page-3">
+
+    <h2>Section 3: IO subsystem</h2>
+
+    <h3>3.1. Keyboard IO map</h3>
+
+    <table class="keymap">
+      <tr>
+        <th rowspan="2">Port Addr</th>
+        <th colspan="8">Data bit</th>
+      </tr>
+      <tr>
+        <th>7</th>
+        <th>6</th>
+        <th>5</th>
+        <th>4</th>
+        <th>3</th>
+        <th>2</th>
+        <th>1</th>
+        <th>0</th>
+      </tr>
+      <tr>
+        <td class="address">$00</td>
+        <td>6</td>
+        <td>5</td>
+        <td>4</td>
+        <td>3</td>
+        <td>2</td>
+        <td>1</td>
+        <td>Esc</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="address">$01</td>
+        <td>Tab</td>
+        <td>BSp</td>
+        <td>=</td>
+        <td>-</td>
+        <td>0</td>
+        <td>9</td>
+        <td>8</td>
+        <td>7</td>
+      </tr>
+      <tr>
+        <td class="address">$02</td>
+        <td>I</td>
+        <td>U</td>
+        <td>Y</td>
+        <td>T</td>
+        <td>R</td>
+        <td>E</td>
+        <td>W</td>
+        <td>Q</td>
+      </tr>
+      <tr>
+        <td class="address">$03</td>
+        <td>S</td>
+        <td>A</td>
+        <td>Ctr</td>
+        <td>Ent</td>
+        <td>]</td>
+        <td>[</td>
+        <td>P</td>
+        <td>O</td>
+      </tr>
+      <tr>
+        <td class="address">$04</td>
+        <td>;</td>
+        <td>L</td>
+        <td>K</td>
+        <td>J</td>
+        <td>H</td>
+        <td>G</td>
+        <td>F</td>
+        <td>D</td>
+      </tr>
+      <tr>
+        <td class="address">$05</td>
+        <td>V</td>
+        <td>C</td>
+        <td>X</td>
+        <td>Z</td>
+        <td>\</td>
+        <td>ShL</td>
+        <td>`</td>
+        <td>"</td>
+      </tr>
+      <tr>
+        <td class="address">$06</td>
+        <td>*</td>
+        <td>ShR</td>
+        <td>/</td>
+        <td>.</td>
+        <td>,</td>
+        <td>M</td>
+        <td>N</td>
+        <td>B</td>
+      </tr>
+      <tr>
+        <td class="address">$07</td>
+        <td></td>
+        <td></td>
+        <td>&Rightarrow;</td>
+        <td>&Leftarrow;</td>
+        <td>&Downarrow;</td>
+        <td>&Uparrow;</td>
+        <td>Spc</td>
+        <td>Alt</td>
+      </tr>
+    </table>
+
+  </div>
+  <div class="page page-4">
+
+    <h2>Appendices</h2>
+
+    <h3>Appendix A - NovaZ 16-color palette</h3>
+
+    <table id="palette-demo">
+      <tr>
+        <td style="background-color: #000000;color:white;">Color 0</td>
+        <td style="background-color: #ff0000;color:white;">Color 1</td>
+        <td style="background-color: #ffa100;">Color 2</td>
+        <td style="background-color: #ffa09f;">Color 3</td>
+      </tr>
+      <tr>
+        <td style="background-color: #ffff00;">Color 4</td>
+        <td style="background-color: #a3a000;">Color 5</td>
+        <td style="background-color: #00a100;">Color 6</td>
+        <td style="background-color: #00ff00;">Color 7</td>
+      </tr>
+      <tr>
+        <td style="background-color: #002b36;color:white;">Color 8</td>
+        <td style="background-color: #00009b;color:white;">Color 9</td>
+        <td style="background-color: #0000ff;color:white;">Color 10</td>
+        <td style="background-color: #a200ff;color:white;">Color 11</td>
+      </tr>
+      <tr>
+        <td style="background-color: #ff00ff;">Color 12</td>
+        <td style="background-color: #00ffff;">Color 13</td>
+        <td style="background-color: #a2a19f;">Color 14</td>
+        <td style="background-color: #ffffff;">Color 15</td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>

@@ -112,6 +112,10 @@ const SCANCODES = {
     "NumpadMultiply": 0x37,
     "AltLeft": 0x38,
     "Space": 0x39,
+    "ArrowUp": 0x3a,
+    "ArrowDown": 0x3b,
+    "ArrowLeft": 0x3c,
+    "ArrowRight": 0x3d,
 }
 
 let CANVAS;

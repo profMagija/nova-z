@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NovaZ</title>
 
-  <script src="./Z80.js/Z80.js"></script>
+  <script src="./Z80/Z80.js"></script>
   <script src="./index.js"></script>
 
   <script>
@@ -47,6 +47,7 @@
   <div class="tabbar">
     <button class="tablink" onclick="openTab('tab-screen')">Screen</button>
     <button class="tablink" onclick="openTab('tab-asm')">Assembler</button>
+    <a href="./documentation.html" target="_blank">Documentation</a>
   </div>
 
   <div id="tab-screen" class="tabcontent">
@@ -61,6 +62,7 @@
   </div>
 
   <div id="tab-asm" class="tabcontent">
+    Not yet implemented. Use <a href="https://www.asm80.com/">asm80</a> and paste .hex file below. <br>
     Load hex file: <input type="file" name="" id="hex-file" onchange="load_hex_file()"> <br>
     Hex data:<br>
     <textarea id="hex-data" cols="37" rows="10"></textarea><br>
