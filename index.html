@@ -7,8 +7,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NovaZ</title>
 
+  <link rel="stylesheet" data-name="vs/editor/editor.main"
+    href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
+
+
+  <script src="./asm80-node/parser.js"></script>
+  <script src="./asm80-node/monolith.js"></script>
+  <script src="./asm80-node/asm.js"></script>
+
   <script src="./Z80/Z80.js"></script>
+
   <script src="./index.js"></script>
+  <script src="./asm.js"></script>
+
 
   <script>
     function openTab(name) {
@@ -46,7 +57,7 @@
 <body>
   <div class="tabbar">
     <button class="tablink" onclick="openTab('tab-screen')">Screen</button>
-    <button class="tablink" onclick="openTab('tab-asm')">Assembler</button>
+    <button class="tablink" onclick="openTab('tab-asm'); setTimeout(asm_show, 0);">Assembler</button>
     <a href="./documentation.html" target="_blank">Documentation</a>
   </div>
 
@@ -62,15 +73,37 @@
   </div>
 
   <div id="tab-asm" class="tabcontent">
-    Not yet implemented. Use <a href="https://www.asm80.com/">asm80</a> and paste .hex file below. <br>
-    Load hex file: <input type="file" name="" id="hex-file" onchange="load_hex_file()"> <br>
-    Hex data:<br>
-    <textarea id="hex-data" cols="37" rows="10"></textarea><br>
-    <button onclick="load_hex(document.getElementById('hex-data').value)">Load</button>
+    <button onclick="do_assemble(false)">Assemble</button>
+    <button onclick="do_assemble(true)">Assemble & run</button> <br>
+    <span id="assembler-loading">Loading...</span>
+    <div name="assembler-input" id="assembler-input" style="width: 800px; height: 600px;"></div> <br>
+    <div id="assembler-output"></div>
   </div>
+
+  <script type="text/javascript" src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+  <script>
+    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
+
+    // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+    // the default worker url location (used when creating WebWorkers). The problem here is that
+    // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
+    // a web worker through a same-domain script
+    window.MonacoEnvironment = {
+      getWorkerUrl: function (workerId, label) {
+        return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+        self.MonacoEnvironment = {
+          baseUrl: 'https://unpkg.com/monaco-editor@latest/min/'
+        };
+        importScripts('https://unpkg.com/monaco-editor@latest/min/vs/base/worker/workerMain.js');`
+        )}`;
+      }
+    };
+  </script>
+
 
   <script>
     openTab('tab-screen');
+    asm_load();
     on_load();
     start();
   </script>

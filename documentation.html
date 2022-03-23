@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovaZ Programmers Manual</title>
+  <title>NovaZ Programmer's Manual</title>
 
   <style>
     body {
@@ -85,7 +85,7 @@
 <body>
   <div class="page page-1">
     <center>
-      <h1>NovaZ Programmers Manual</h1>
+      <h1>NovaZ Programmer's Manual</h1>
       Confidential - do not distribute
     </center>
 
@@ -156,6 +156,13 @@
       </tr>
       <tr>
         <td class="address">$08</td>
+        <td class="address">$08</td>
+        <td>
+          <b>Video Control.</b>
+        </td>
+      </tr>
+      <tr>
+        <td class="address">$09</td>
         <td class="address">$FF</td>
         <td>
           Unmapped.
@@ -175,27 +182,42 @@
 
     <h3>2.1. Video modes</h3>
 
+    Video modes can be changed by writing to IO port <tt>$08</tt>.
+
     <h4>2.1.1 VM0 - 4bpp Linear</h4>
 
     <p>
       In this mode, screen resolution is 128x128. Each pixel can have one of the 16 colors from the NovaZ palette
       (see Appendix A). Each byte in memory encodes the color of two pixels: low nibble encodes the left, and high
-      nibble the right pixel.
+      nibble the right pixel. The pixel pairs are mapped to addresses left to right, top to bottom: <tt>$8000</tt>
+      is the top left two pixels, <tt>$8001</tt> two next to them (third and fourth in first line), and <tt>$8041</tt>
+      the two below them (third and fourth in second line).
 
     <p>
-      For example, writing the value <tt>$17</tt> to <tt>$8001</tt> would set the third
-      pixel on the first scanline to green (color 7), and the fourth to red (color 1).
+      For example, writing the value <tt>$17</tt> to <tt>$8001</tt> would set the third pixel on the first scanline to
+      green (color 7), and the fourth to red (color 1).
 
     <p>
       This way, each scanline is represented using <tt>$40</tt> bytes, and the entire <tt>$2000</tt> of video
       memory is used up by pixel data.
+
+    <h4>2.1.1 VM1 - 8bpp Linear</h4>
+
+    <p>
+      In this mode, screen resolution is 64x64. Each pixel can have one of 256 direct-mapped colors. Each byte in memory
+      encodes the color of one pixel. The pixels map to addresses in left to right, top to bottom order: <tt>$8000</tt>
+      is the top right pixel, <tt>$8001</tt> one next to it (second pixel in first line), and <tt>$8041</tt> the one
+      below it (second pixel in second line).
 
   </div>
   <div class="page page-3">
 
     <h2>Section 3: IO subsystem</h2>
 
-    <h3>3.1. Keyboard IO map</h3>
+    <h3>3.1. Keyboard IO</h3>
+
+    Reading from the following ports will return a byte representing the state of the corresponding keys. If the key is
+    pressed, the bit will be <tt>1</tt>, otherwise it will be <tt>0</tt>.
 
     <table class="keymap">
       <tr>

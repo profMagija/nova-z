@@ -254,7 +254,8 @@ function on_load() {
     load_hex(BOOT_ROM);
 }
 
-function load_hex(content) {
+function load_hex(content, do_run) {
+    CART.fill(0);
     content.split("\n").forEach(s => {
         s = s.replace(/\s+/, '');
         if (s.length == 0) return;
@@ -266,7 +267,15 @@ function load_hex(content) {
             CART[loadpos + i] = Number.parseInt(s.substr(9 + 2 * i, 2), 16);
         }
     });
-    reset();
+
+    if (do_run) {
+        openTab('tab-screen');
+        reset();
+        start();
+    } else {
+        stop();
+        reset();
+    }
 }
 
 function load_hex_file() {
