@@ -121,6 +121,8 @@ const SCANCODES = {
 let CANVAS;
 let IMAGE_DATA;
 
+let VIDEO_MODE;
+
 /*
  * Memory map:
  *   0000 - 8000 : Cart  ROM  (r-)
@@ -139,7 +141,7 @@ let CORE = {
         addr = addr | 0;
         if (addr < 0x8000) {
             return CART[addr];
-        } else if (addr < 0xc000) {
+        } else if (addr < 0xa000) {
             return VRAM[addr - 0x8000];
         } else if (addr < 0xe000) {
             return RAM[addr - 0xc000];
@@ -152,10 +154,8 @@ let CORE = {
         addr = addr | 0;
         if (addr < 0x8000) {
         } else if (addr < 0xa000) {
-            VRAM[addr - 0xa000] = value;
-            let base = (addr - 0x8000) << 3;
-            IMAGE_DATA.data.set(PALETTE[value & 0xf], base);
-            IMAGE_DATA.data.set(PALETTE[value >> 4], base + 4);
+            VRAM[addr - 0x8000] = value;
+            do_draw_set_vmem(addr - 0x8000, value);
         } else if (addr < 0xc000) {
         } else if (addr < 0xe000) {
             RAM[addr - 0xc000] = value;
@@ -165,7 +165,7 @@ let CORE = {
 
     io_read: function (port) {
         port = port & 0xff;
-        if (port < 0x20) {
+        if (port < 0x08) {
             return KEYMAP[port];
         } else {
             return 0;
@@ -173,6 +173,10 @@ let CORE = {
     },
 
     io_write: function (port, value) {
+        port = port & 0xff;
+        if (port == 0x08) {
+            set_video_mode(value);
+        }
     }
 };
 
@@ -206,6 +210,53 @@ function draw_buffer() {
     CANVAS.putImageData(IMAGE_DATA, 0, 0);
 }
 
+function do_draw_set_vmem(addr, value) {
+    switch (VIDEO_MODE) {
+        case 0: {
+            let base = addr << 3;
+            IMAGE_DATA.data.set(PALETTE[value & 0xf], base);
+            IMAGE_DATA.data.set(PALETTE[value >> 4], base + 4);
+            break;
+        }
+        case 1: {
+            if (addr >= 0x1000) {
+                return;
+            }
+            let base = addr << 2;
+            let r = (value >> 5) & 7;
+            let g = (value >> 2) & 7;
+            let b = value & 3;
+            IMAGE_DATA.data.set([r << 5, g << 5, b << 6, 0xff], base);
+            break;
+        }
+    }
+}
+
+function set_video_mode(vm) {
+    console.log('setting VM to', vm);
+    let c = document.getElementById('canvas');
+    if (vm == 0) {
+        VIDEO_MODE = 0;
+        c.width = 128;
+        c.height = 128;
+        c.classList.value = "vm0";
+    } else if (vm == 1) {
+        VIDEO_MODE = 1;
+        c.width = 64;
+        c.height = 64;
+        c.classList.value = "vm1";
+    } else {
+        return;
+    }
+
+    IMAGE_DATA = CANVAS.createImageData(c.width, c.height);
+    for (let i = 0; i < 0x2000; i++) {
+        do_draw_set_vmem(i, VRAM[i]);
+    }
+
+    draw_buffer();
+}
+
 let FRAME_INTERVAL = -1;
 
 function start() {
@@ -225,9 +276,8 @@ function stop() {
 }
 
 function reset() {
-    for (let i = 0; i < IMAGE_DATA.data.length; i += 4) {
-        IMAGE_DATA.data.set([0, 0, 0, 0xff], i);
-    }
+    VRAM.fill(0);
+    set_video_mode(0);
     draw_buffer();
     CPU.reset();
 }
@@ -252,6 +302,7 @@ function on_load() {
     });
 
     load_hex(BOOT_ROM);
+    reset();
 }
 
 function load_hex(content, do_run) {

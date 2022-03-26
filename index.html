@@ -40,12 +40,16 @@
       padding: 0;
     }
 
+    #canvas.vm0 {
+      transform: scale(4);
+    }
+
+    #canvas.vm1 {
+      transform: scale(8);
+    }
+
     #canvas {
-      scale: 4;
-      position: relative;
-      left: 195px;
-      top: 195px;
-      image-rendering: -moz-crisp-edges;
+      transform-origin: 0 0;
       image-rendering: -moz-crisp-edges;
       image-rendering: -o-crisp-edges;
       image-rendering: -webkit-optimize-contrast;
@@ -63,7 +67,7 @@
 
   <div id="tab-screen" class="tabcontent">
     <div id="canvas-container">
-      <canvas id="canvas" width="128" height="128" style="border: 1px solid black"></canvas><br>
+      <canvas id="canvas" style="border: 1px solid black"></canvas><br>
     </div>
     <button onclick="start()">Start</button>
     <button onclick="stop()">Stop</button>
