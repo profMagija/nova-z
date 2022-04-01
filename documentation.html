@@ -182,7 +182,7 @@
 
     <h3>2.1. Video modes</h3>
 
-    Video modes can be changed by writing to IO port <tt>$08</tt>.
+    Video modes can be changed by writing their ID to IO port <tt>$08</tt>.
 
     <h4>2.1.1 VM0 - 4bpp Linear</h4>
 
@@ -208,6 +208,31 @@
       encodes the color of one pixel. The pixels map to addresses in left to right, top to bottom order: <tt>$8000</tt>
       is the top right pixel, <tt>$8001</tt> one next to it (second pixel in first line), and <tt>$8041</tt> the one
       below it (second pixel in second line).
+
+    <p>
+      Colors are encoded using 3-3-2 RGB color mapping, as shown in the following table:
+
+    <table>
+      <tr>
+        <th>Channel</th>
+        <td colspan="3">Red</td>
+        <td colspan="3">Green</td>
+        <td colspan="2">Blue</td>
+      </tr>
+      <tr>
+        <th>
+          Bits
+        </th>
+        <td width="20px">7</td>
+        <td width="20px">6</td>
+        <td width="20px">5</td>
+        <td width="20px">4</td>
+        <td width="20px">3</td>
+        <td width="20px">2</td>
+        <td width="20px">1</td>
+        <td width="20px">0</td>
+      </tr>
+    </table>
 
   </div>
   <div class="page page-3">
