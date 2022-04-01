@@ -226,7 +226,10 @@ function do_draw_set_vmem(addr, value) {
             let r = (value >> 5) & 7;
             let g = (value >> 2) & 7;
             let b = value & 3;
-            IMAGE_DATA.data.set([r << 5, g << 5, b << 6, 0xff], base);
+            r = (r << 5) | (r << 2) | (r >> 1);
+            g = (g << 5) | (g << 2) | (g >> 1);
+            b = (b << 6) | (b << 4) | (b << 2) | b;
+            IMAGE_DATA.data.set([r, g, b, 0xff], base);
             break;
         }
     }
