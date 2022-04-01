@@ -89,17 +89,20 @@ function do_compile() {
 
   if (res[0]) {
     console.log(res[0]);
+    let lineNumber = res[0].s.numline;
+    let lineContent = ASM_EDITOR.getModel().getLineContent(lineNumber);
+
     asm_setDecorations([{
       message: res[0].msg,
       source: 'z80asm',
       code: 'err',
       severity: 8,
-      startLineNumber: res[0].s.numline,
-      startColumn: 0,
-      endLineNumber: res[0].s.numline,
-      endColumn: res[0].s.line.length,
+      startLineNumber: lineNumber,
+      startColumn: lineContent.length - lineContent.trimStart().length + 1,
+      endLineNumber: lineNumber,
+      endColumn: lineContent.length + 1,
     }]);
-    asm_setStatus(`Error on line ${res[0].s.numline}: ${res[0].msg}`);
+    asm_setStatus(`Error on line ${lineNumber}: ${res[0].msg}`);
     return null;
   } else {
     asm_setDecorations([]);
