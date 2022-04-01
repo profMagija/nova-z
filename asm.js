@@ -133,9 +133,7 @@ function do_compile() {
   const text = ASM_EDITOR.getModel().getValue();
 
   try {
-    console.log('here');
     ASM.parse(text, Monolith.Z80);
-    console.log('there');
   } catch (e) {
     if (!Array.isArray(e)) e = [e];
     let deco = [];

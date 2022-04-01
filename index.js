@@ -180,15 +180,30 @@ let CORE = {
     }
 };
 
+let DEBUG_MODE = false;
+
 let CPU = new Z80(CORE);
 
-let FREQ = 20000000; // 20MHz
+let FREQ_DYN = true;
+const FREQ_MAX = 20000000; // 20MHz
+const FREQ_MIN = 10000000; // 10MHz
+const FREQ_DLT = 100000; // 0.1MHz
 
-function do_frame() {
+let FREQ = FREQ_MAX;
+
+let AVG_FRAME_TIME = 0;
+let AVG_FRAME_UTIL = 0;
+const EMA_BETA = 0.2;
+
+let FRAME_DISPLAY = 0;
+
+function do_frame_for_real() {
     let t_states = 0;
 
-    while (t_states < FREQ / 30 && !CPU.getState().halted) {
-        t_states += CPU.run_instruction();
+    while (t_states < FREQ / 30) {
+        let duration = CPU.run_instruction();
+        if (duration == -1) break;
+        t_states += duration;
     }
 
     let state = CPU.getState();
@@ -199,6 +214,44 @@ function do_frame() {
 
     draw_buffer();
     CPU.interrupt(false, 0);
+
+    return t_states;
+}
+
+function do_frame() {
+    let start = window.performance.now();
+
+    let t_states = do_frame_for_real();
+
+    let util = t_states / (FREQ / 30);
+    let duration = window.performance.now() - start;
+
+    AVG_FRAME_TIME = duration * EMA_BETA + AVG_FRAME_TIME * (1 - EMA_BETA);
+    AVG_FRAME_UTIL = util * EMA_BETA + AVG_FRAME_UTIL * (1 - EMA_BETA);
+
+    if (FREQ_DYN) {
+        if (AVG_FRAME_TIME > 34 && FREQ > FREQ_MIN) {
+            FREQ -= FREQ_DLT;
+        } else if (AVG_FRAME_TIME < 30 && FREQ < FREQ_MAX) {
+            FREQ += FREQ_DLT;
+        }
+    }
+
+    if (DEBUG_MODE) {
+        function write_time(t) {
+            return `${t.toFixed(2)}ms (${Math.round(t / 33.333 * 100)}%)`
+        }
+
+        FRAME_DISPLAY++;
+        if (FRAME_DISPLAY % 4 == 0) {
+            FRAME_DISPLAY = 0;
+            document.getElementById('debug-frame-time').innerText = `
+                fps  = ${Math.min(30, Math.round(1000 / AVG_FRAME_TIME))}
+                freq = ${(FREQ / 1000000).toFixed(1)}MHz ${FREQ_DYN ? '' : '(fixed)'}
+                time = ${write_time(AVG_FRAME_TIME)} | ${write_time(duration)}
+                util = ${Math.round(AVG_FRAME_UTIL * 100)}% | ${Math.round(util * 100)}%`;
+        }
+    }
 }
 
 function do_single_step() {
@@ -263,6 +316,7 @@ function set_video_mode(vm) {
 let FRAME_INTERVAL = -1;
 
 function start() {
+    AVG_FRAME_TIME = AVG_FRAME_UTIL = 0;
     if (FRAME_INTERVAL != -1)
         return;
 
@@ -291,7 +345,20 @@ function on_load() {
     IMAGE_DATA = CANVAS.createImageData(128, 128);
 
     document.addEventListener('keydown', function (ev) {
+
+        if (ev.code == "F9") {
+            DEBUG_MODE = true;
+        }
+        if (ev.code == "F8") {
+            FREQ_DYN = !FREQ_DYN;
+            FREQ = FREQ_MAX;
+        }
+
         let code = SCANCODES[ev.code];
+        if (code === undefined) {
+            return;
+        }
+
         let idx = code >> 3;
         let bit = code & 7;
         KEYMAP[idx] |= 1 << bit;

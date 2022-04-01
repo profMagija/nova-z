@@ -50,11 +50,7 @@
 
     #canvas {
       transform-origin: 0 0;
-      image-rendering: crisp-edges;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: -o-crisp-edges;
-      image-rendering: -webkit-optimize-contrast;
-      -ms-interpolation-mode: nearest-neighbor;
+      image-rendering: pixelated;
     }
 
     .view-overlays>div>div {
@@ -82,7 +78,8 @@
     <button onclick="stop()">Stop</button>
     <button onclick="do_single_step()">Single Step</button>
     <button onclick="reset()">Reset</button>
-    <span id="console-status">Stopped</span>
+    <span id="console-status">Stopped</span> <br>
+    <pre id="debug-frame-time"></pre>
   </div>
 
   <div id="tab-asm" class="tabcontent">

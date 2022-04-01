@@ -279,9 +279,8 @@ let run_instruction = function()
    }
    else
    {
-      // While we're halted, claim that we spent a cycle doing nothing,
-      //  so that the rest of the emulator can still proceed.
-      return 1;
+      // -1 must be handled by the emulator to mean that CPU is halted
+      return -1;
    }
 };
 
@@ -411,11 +410,8 @@ let decode_instruction = function(opcode)
       // These are the 8-bit register ALU instructions.
       // We'll get the operand and then use this "jump table"
       //  to call the correct utility function for the instruction.
-      var operand = get_operand(opcode),
-          op_array = [do_add, do_adc, do_sub, do_sbc,
-                      do_and, do_xor, do_or, do_cp];
-      
-      op_array[(opcode & 0x38) >>> 3]( operand);
+      var operand = get_operand(opcode);
+      ALU_OPS[(opcode & 0x38) >>> 3](operand);
    }
    else
    {
@@ -3296,6 +3292,8 @@ dd_instructions[0xf9] = function()
 {
    sp = ix;
 };
+
+const ALU_OPS = [do_add, do_adc, do_sub, do_sbc, do_and, do_xor, do_or, do_cp];
 
 
 ///////////////////////////////////////////////////////////////////////////////
