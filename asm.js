@@ -19,6 +19,7 @@ function asm_load() {
     let deb = -1;
     ASM_EDITOR.onDidChangeModelContent(ev => {
       localStorage.setItem('asm-:wip', ASM_EDITOR.getModel().getValue());
+      doc_saved_write();
       clearTimeout(deb);
       deb = setTimeout(do_compile, 1000);
     })
@@ -29,6 +30,37 @@ function asm_load() {
     }, 0);
   });
 }
+
+let numCtrlSave = 0;
+let ctrlSaveTimeout = -1;
+
+function doc_saved_write(how_hard, clear_cb) {
+  let saveState = document.getElementById('save-status');
+  saveState.innerText = "Document Saved";
+  saveState.style.fontSize = (how_hard || 0) + 10 + "pt";
+  if (how_hard > 3) {
+    saveState.style.fontWeight = 'bold';
+  } else {
+    saveState.style.fontWeight = null;
+  }
+
+  clearTimeout(ctrlSaveTimeout);
+  ctrlSaveTimeout = setTimeout(() => {
+    saveState.innerText = "";
+    saveState.style.fontSize = "0pt";
+    saveState.style.fontWeight = null;
+    if (clear_cb) {
+      clear_cb();
+    }
+  }, 5000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code == "KeyS" && e.ctrlKey) {
+    e.preventDefault();
+    doc_saved_write(numCtrlSave++, () => numCtrlSave = 0);
+  }
+})
 
 
 function asm_setDecorations(markers) {
@@ -81,28 +113,52 @@ function asm_setStatus(s) {
   document.getElementById('assembler-output').innerText = s;
 }
 
+function make_error(err) {
+  let lineNumber = err.s.numline;
+  let lineContent = ASM_EDITOR.getModel().getLineContent(lineNumber);
+  return [{
+    message: err.msg,
+    source: 'z80asm',
+    code: 'err',
+    severity: 8,
+    startLineNumber: lineNumber,
+    startColumn: lineContent.length - lineContent.trimStart().length + 1,
+    endLineNumber: lineNumber,
+    endColumn: lineContent.length + 1,
+  }, `Error on line ${lineNumber}: ${err.msg}`];
+}
+
 function do_compile() {
   asm_setStatus("Compiling...");
   const text = ASM_EDITOR.getModel().getValue();
+
+  try {
+    console.log('here');
+    ASM.parse(text, Monolith.Z80);
+    console.log('there');
+  } catch (e) {
+    if (!Array.isArray(e)) e = [e];
+    let deco = [];
+    let status = "";
+
+    e.forEach(err => {
+      let [error_deco, error_msg] = make_error(err);
+      deco.push(error_deco)
+      status = status + error_msg + "\n";
+    });
+
+    asm_setDecorations(deco);
+    asm_setStatus(status);
+
+    return null;
+  }
+
   let res = ASM.compile(text, Monolith.Z80);
-  console.log(res);
 
   if (res[0]) {
-    console.log(res[0]);
-    let lineNumber = res[0].s.numline;
-    let lineContent = ASM_EDITOR.getModel().getLineContent(lineNumber);
-
-    asm_setDecorations([{
-      message: res[0].msg,
-      source: 'z80asm',
-      code: 'err',
-      severity: 8,
-      startLineNumber: lineNumber,
-      startColumn: lineContent.length - lineContent.trimStart().length + 1,
-      endLineNumber: lineNumber,
-      endColumn: lineContent.length + 1,
-    }]);
-    asm_setStatus(`Error on line ${lineNumber}: ${res[0].msg}`);
+    let [error_deco, error_msg] = make_error(res[0]);
+    asm_setDecorations([error_deco]);
+    asm_setStatus(error_msg);
     return null;
   } else {
     asm_setDecorations([]);
