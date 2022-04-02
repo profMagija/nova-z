@@ -19,6 +19,7 @@
 
   <script src="./index.js"></script>
   <script src="./asm.js"></script>
+  <script src="./disasm.js"></script>
 
 
   <script>
@@ -53,6 +54,14 @@
       image-rendering: pixelated;
     }
 
+    #debugger-output {
+      position: absolute;
+      top: 50px;
+      left: 530px;
+    }
+
+    /* ------- monaco fixes ------- */
+
     .view-overlays>div>div {
       position: absolute;
     }
@@ -74,11 +83,14 @@
     <div id="canvas-container">
       <canvas id="canvas" style="border: 1px solid black"></canvas><br>
     </div>
+    <pre id="debugger-output"></pre>
+
     <button onclick="start()">Start</button>
     <button onclick="stop()">Stop</button>
     <button onclick="do_single_step()">Single Step</button>
     <button onclick="reset()">Reset</button>
     <span id="console-status">Stopped</span> <br>
+    <button onclick="set_show_debugger(!SHOW_DEBUGGER);"> Show / hide debugger</button>
     <pre id="debug-frame-time"></pre>
   </div>
 

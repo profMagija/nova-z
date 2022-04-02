@@ -213,9 +213,62 @@ function do_frame_for_real() {
     }
 
     draw_buffer();
+    write_debugger();
+
     CPU.interrupt(false, 0);
 
     return t_states;
+}
+
+let SHOW_DEBUGGER = false;
+
+function set_show_debugger(value) {
+    if (value) {
+        SHOW_DEBUGGER = true;
+        document.getElementById('debugger-output').style.display = null;
+    } else {
+        SHOW_DEBUGGER = false;
+        document.getElementById('debugger-output').style.display = 'none';
+    }
+}
+
+function write_debugger() {
+    if (!SHOW_DEBUGGER) return;
+
+    let s = CPU.getState();
+
+    function f(n, w) {
+        return n.toString(16).padStart(w || 2, '0').toUpperCase();
+    }
+
+    function g(v) {
+        return v ? '✓' : '⨯';
+    }
+
+    function ff(f) {
+        let S = f.S ? 'S' : '-';
+        let Z = f.Z ? 'Z' : '-';
+        let Y = f.Y ? '5' : '-';
+        let H = f.H ? 'H' : '-';
+        let X = f.X ? '3' : '-';
+        let P = f.P ? 'P' : '-';
+        let N = f.N ? 'N' : '-';
+        let C = f.C ? 'C' : '-';
+        return S + Z + Y + H + X + P + N + C;
+    }
+
+
+
+    let res = `
+        AF  ${f(s.a)}${f(s.flags.value)} | BC  ${f(s.b)}${f(s.c)} | DE  ${f(s.d)}${f(s.e)} | HL  ${f(s.h)}${f(s.l)} | I ${f(s.i)}
+        AF' ${f(s.a_prime)}${f(s.flags_prime.value)} | BC' ${f(s.b_prime)}${f(s.c_prime)} | DE' ${f(s.d_prime)}${f(s.e_prime)} | HL' ${f(s.h_prime)}${f(s.l_prime)} | R ${f(s.r)}
+        IX  ${f(s.ix, 4)} | IY  ${f(s.iy, 4)} | SP  ${f(s.sp, 4)} | PC  ${f(s.pc, 4)}
+        IM  ${f(s.imode)}   | IFF1 ${g(s.iff1)}   | IFF2 ${g(s.iff2)}   | Flags ${ff(s.flags)}
+        `;
+
+    res += DASM.dasm_16(s.pc, x => CORE.mem_read(x), "          ");
+
+    document.getElementById('debugger-output').innerText = res;
 }
 
 function do_frame() {
@@ -257,6 +310,7 @@ function do_frame() {
 function do_single_step() {
     CPU.run_instruction();
     draw_buffer();
+    write_debugger();
 }
 
 function draw_buffer() {

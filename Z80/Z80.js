@@ -125,7 +125,8 @@ function Z80(coreParameter)
             X: flags.X,
             P: flags.P,
             N: flags.N,
-            C: flags.C
+            C: flags.C,
+            value: get_flags_register(),
          },         
          flags_prime: { 
             S: flags_prime.S,
@@ -135,7 +136,8 @@ function Z80(coreParameter)
             X: flags_prime.X,
             P: flags_prime.P,
             N: flags_prime.N,
-            C: flags_prime.C
+            C: flags_prime.C,
+            value: get_flags_prime(),
          },         
          imode         : imode,
          iff1          : iff1,
