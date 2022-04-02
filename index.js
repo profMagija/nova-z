@@ -226,6 +226,7 @@ function set_show_debugger(value) {
     if (value) {
         SHOW_DEBUGGER = true;
         document.getElementById('debugger-output').style.display = null;
+        write_debugger();
     } else {
         SHOW_DEBUGGER = false;
         document.getElementById('debugger-output').style.display = 'none';
