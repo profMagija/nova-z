@@ -188,7 +188,7 @@ function do_frame_for_real() {
     let state = CPU.getState();
 
     if (state.halted && !state.iff1 && !state.ffi0) {
-        document.getElementById('console-status').innerText = "Halted";
+        ui_set_status(STATUS_HALTED);
     }
 
     VIDEO.draw_buffer();
@@ -201,7 +201,10 @@ function do_frame_for_real() {
 
 let SHOW_DEBUGGER = false;
 
-function set_show_debugger(value) {
+function set_show_debugger(value, btn) {
+    if (btn) {
+        btn.classList.value = value ? "active" : "";
+    }
     if (value) {
         SHOW_DEBUGGER = true;
         document.getElementById('debugger-output').style.display = null;
@@ -296,17 +299,31 @@ function do_single_step() {
 
 let FRAME_INTERVAL = -1;
 
+const STATUS_RUNNING = 0;
+const STATUS_STOPPED = 1;
+const STATUS_HALTED = 2;
+
+function ui_set_status(status) {
+    if (status == STATUS_RUNNING) {
+        document.getElementById('ctrl-button-start').classList.add('active');
+        document.getElementById('ctrl-button-stop').classList.remove('active');
+    } else {
+        document.getElementById('ctrl-button-start').classList.remove('active');
+        document.getElementById('ctrl-button-stop').classList.add('active');
+    }
+}
+
 function start() {
+    ui_set_status(STATUS_RUNNING);
     AVG_FRAME_TIME = AVG_FRAME_UTIL = 0;
+
     if (FRAME_INTERVAL != -1)
         return;
-
-    document.getElementById('console-status').innerText = "Running";
     FRAME_INTERVAL = setInterval(do_frame, 1000 / 30);
 }
 
 function stop() {
-    document.getElementById('console-status').innerText = "Stopped";
+    ui_set_status(STATUS_STOPPED);
     if (FRAME_INTERVAL != -1) {
         clearInterval(FRAME_INTERVAL);
         FRAME_INTERVAL = -1;
@@ -316,6 +333,10 @@ function stop() {
 function reset() {
     VIDEO.reset();
     CPU.reset();
+
+    if (FRAME_INTERVAL != -1) {
+        ui_set_status(STATUS_RUNNING);
+    }
 }
 
 function on_load() {

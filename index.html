@@ -26,11 +26,54 @@
         tabcontent[i].style.display = 'none';
       }
 
+      var tabs = document.getElementsByClassName('tablink');
+      for (var i = 0; i < tabs.length; i++) {
+        if (tabs[i].dataset.name == name) {
+          tabs[i].classList.add('active');
+        } else {
+          tabs[i].classList.remove('active');
+        }
+      }
+
       document.getElementById(name).style.display = "block";
     }
   </script>
 
   <style>
+    :root,
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .tabbar {
+      background-color: #111111;
+      width: 100%;
+    }
+
+    .tablink {
+      background-color: #111111;
+      border: none;
+      padding: 10px;
+      margin: 0;
+      color: white;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .tablink:hover {
+      background-color: #222222;
+    }
+
+    .tablink.active {
+      background-color: #444444;
+    }
+
     #canvas-container {
       width: 512px;
       height: 512px;
@@ -59,40 +102,101 @@
 
     #debugger-output {
       position: absolute;
-      top: 50px;
+      top: 100px;
       left: 530px;
+    }
+
+    #toolbox {
+      background-color: #444444;
+      max-height: 42px;
+    }
+
+    .toolbox-separator {
+      display: inline-block;
+      width: 1px;
+      height: 42px;
+      background-color: #111111;
+      position: absolute;
+      margin-left: 5px;
+    }
+
+    #toolbox>button {
+      background-color: #333333;
+      border: 1px solid #888888;
+      padding: 5px;
+      margin: 5px;
+      color: white;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #toolbox>button:hover {
+      background-color: #444444;
+    }
+
+    #toolbox>button.active {
+      background-color: #333355;
+    }
+
+    #toolbox>button.active:hover {
+      background-color: #444477;
+    }
+
+    #assembler-output {
+      padding-left: 20px;
+    }
+
+    #console-status {
+      color: white;
+      font-size: 14px;
     }
   </style>
 </head>
 
 <body>
   <div class="tabbar">
-    <button class="tablink" onclick="openTab('tab-screen')">Screen</button>
-    <button class="tablink" onclick="openTab('tab-asm'); setTimeout(asm_show, 0);">Assembler</button>
-    <a href="./documentation.html" target="_blank">Documentation</a>
+    <button class="tablink active" data-name="tab-screen" onclick="openTab('tab-screen')">
+      Screen
+    </button><button class="tablink" data-name="tab-asm" onclick="openTab('tab-asm'); setTimeout(asm_show, 0);">
+      Assembler
+    </button><a class="tablink" href="./documentation.html" target="_blank">
+      Documentation
+    </a>
   </div>
 
   <div id="tab-screen" class="tabcontent">
+    <div id="toolbox">
+      <button onclick="start()" id="ctrl-button-start">
+        Start
+      </button><button onclick="stop()" id="ctrl-button-stop">
+        Stop
+      </button><button onclick="do_single_step()">
+        Single Step
+      </button><button onclick="reset()">
+        Reset
+      </button><span class="toolbox-separator">
+      </span><button onclick="set_show_debugger(!SHOW_DEBUGGER, this);" style="margin-left: 16px">Debugger</button>
+    </div>
     <div id="canvas-container">
       <canvas id="canvas"></canvas><br>
     </div>
     <pre id="debugger-output"></pre>
 
-    <button onclick="start()">Start</button>
-    <button onclick="stop()">Stop</button>
-    <button onclick="do_single_step()">Single Step</button>
-    <button onclick="reset()">Reset</button>
-    <span id="console-status">Stopped</span> <br>
-    <button onclick="set_show_debugger(!SHOW_DEBUGGER);"> Show / hide debugger</button>
     <pre id="debug-frame-time"></pre>
   </div>
 
-  <div id="tab-asm" class="tabcontent">
-    <button onclick="do_assemble(false)">Assemble</button>
-    <button onclick="do_assemble(true)">Assemble & run</button>
-    <span id="save-status"></span><br>
+  <div id="tab-asm" class="tabcontent" style="display: none;">
+    <div id="toolbox">
+      <button onclick="do_assemble(false)">
+        Assemble & load
+      </button><button onclick="do_assemble(true)">
+        Assemble & run
+      </button><span id="save-status"></span>
+    </div>
     <span id="assembler-loading">Loading...</span>
-    <div name="assembler-input" id="assembler-input" style="width: 800px; height: 600px;"></div> <br>
+    <div name="assembler-input" id="assembler-input" style="width: 100%; max-width: 1000px; height: 600px;"></div>
+    <br>
     <div id="assembler-output"></div>
   </div>
 

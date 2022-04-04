@@ -8,6 +8,11 @@
   <title>NovaZ Programmer's Manual</title>
 
   <style>
+    html.dark-theme {
+      filter: invert();
+      background-color: #000000;
+    }
+
     body {
       font-family: 'Courier New', Courier, monospace;
       text-align: justify;
@@ -66,6 +71,10 @@
       margin: 0 auto;
     }
 
+    .dark-theme #palette-demo {
+      filter: grayscale(1) invert();
+    }
+
     #palette-demo tr td {
       width: 100px;
       height: 100px;
@@ -83,6 +92,10 @@
 </head>
 
 <body>
+  <button style="position:fixed; top: 0; right: 0;"
+    onclick="document.body.parentElement.classList.toggle('dark-theme')">
+    Invert theme
+  </button>
   <div class="page page-1">
     <center>
       <h1>NovaZ Programmer's Manual</h1>

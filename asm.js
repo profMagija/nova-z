@@ -21,6 +21,7 @@ function asm_load() {
       value: localStorage.getItem('asm-:wip'),
     });
 
+
     let deb = -1;
     ASM_EDITOR.onDidChangeModelContent(ev => {
       localStorage.setItem('asm-:wip', ASM_EDITOR.getModel().getValue());
@@ -33,6 +34,11 @@ function asm_load() {
       document.getElementById("assembler-loading").remove();
       do_compile();
     }, 0);
+  });
+
+  window.addEventListener('resize', () => {
+    console.log('resize');
+    ASM_EDITOR.layout();
   });
 }
 
@@ -220,7 +226,7 @@ const MONARCH = {
           '': 'identifier',
         }
       }],
-      [/\b[a-z][a-z0-9]*\b/, {
+      [/\b[a-z_.][a-z0-9_.]*\b/, {
         cases: {
           '@mnemonic': 'keyword.mnemonic',
           '@preprocessor': 'annotation',
