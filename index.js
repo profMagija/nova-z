@@ -35,25 +35,6 @@ const BOOT_ROM = `
 
 const KEYMAP = new Uint8Array(0x8);
 
-const PALETTE = [
-    [0x00, 0x00, 0x00, 0xff], // 0
-    [0xff, 0x00, 0x00, 0xff], // 1
-    [0xff, 0xa1, 0x00, 0xff], // 2
-    [0xff, 0xa0, 0x9f, 0xff], // 3
-    [0xff, 0xff, 0x00, 0xff], // 4
-    [0xa3, 0xa0, 0x00, 0xff], // 5
-    [0x00, 0xa1, 0x00, 0xff], // 6
-    [0x00, 0xff, 0x00, 0xff], // 7
-    [0x00, 0x2b, 0x36, 0xff], // 8
-    [0x00, 0x00, 0x9b, 0xff], // 9
-    [0x00, 0x00, 0xff, 0xff], // A
-    [0xa2, 0x00, 0xff, 0xff], // B
-    [0xff, 0x00, 0xff, 0xff], // C
-    [0x00, 0xff, 0xff, 0xff], // D
-    [0xa2, 0xa1, 0x9f, 0xff], // E
-    [0xff, 0xff, 0xff, 0xff], // F
-]
-
 const SCANCODES = {
     "Escape": 0x01,
     "Digit1": 0x02,
@@ -118,10 +99,6 @@ const SCANCODES = {
     "ArrowRight": 0x3d,
 }
 
-let CANVAS;
-let IMAGE_DATA;
-
-let VIDEO_MODE;
 
 /*
  * Memory map:
@@ -131,9 +108,8 @@ let VIDEO_MODE;
  * 
  * IO map:
  *   00 - 08 : Keyboard
+ *   08 - 10 : Video
  * 
- * Video RAM address:
- * 100YYYYY YYXXXXXX : two pixels (lower nibble = left, upper nibble = right)
  */
 
 let CORE = {
@@ -142,7 +118,7 @@ let CORE = {
         if (addr < 0x8000) {
             return CART[addr];
         } else if (addr < 0xa000) {
-            return VRAM[addr - 0x8000];
+            return VIDEO.get_vmem(addr - 0x8000);
         } else if (addr < 0xe000) {
             return RAM[addr - 0xc000];
         } else {
@@ -154,8 +130,7 @@ let CORE = {
         addr = addr | 0;
         if (addr < 0x8000) {
         } else if (addr < 0xa000) {
-            VRAM[addr - 0x8000] = value;
-            do_draw_set_vmem(addr - 0x8000, value);
+            VIDEO.set_vmem(addr - 0x8000, value);
         } else if (addr < 0xc000) {
         } else if (addr < 0xe000) {
             RAM[addr - 0xc000] = value;
@@ -167,6 +142,8 @@ let CORE = {
         port = port & 0xff;
         if (port < 0x08) {
             return KEYMAP[port];
+        } else if (port < 0x10) {
+            return VIDEO.get_vio(port - 0x08);
         } else {
             return 0;
         }
@@ -174,8 +151,10 @@ let CORE = {
 
     io_write: function (port, value) {
         port = port & 0xff;
-        if (port == 0x08) {
-            set_video_mode(value);
+        if (port < 0x08) {
+            // keyboard
+        } else if (port < 0x10) {
+            VIDEO.set_vio(port - 0x08, value);
         }
     }
 };
@@ -212,7 +191,7 @@ function do_frame_for_real() {
         document.getElementById('console-status').innerText = "Halted";
     }
 
-    draw_buffer();
+    VIDEO.draw_buffer();
     write_debugger();
 
     CPU.interrupt(false, 0);
@@ -310,63 +289,10 @@ function do_frame() {
 
 function do_single_step() {
     CPU.run_instruction();
-    draw_buffer();
+    VIDEO.draw_buffer();
     write_debugger();
 }
 
-function draw_buffer() {
-    CANVAS.putImageData(IMAGE_DATA, 0, 0);
-}
-
-function do_draw_set_vmem(addr, value) {
-    switch (VIDEO_MODE) {
-        case 0: {
-            let base = addr << 3;
-            IMAGE_DATA.data.set(PALETTE[value & 0xf], base);
-            IMAGE_DATA.data.set(PALETTE[value >> 4], base + 4);
-            break;
-        }
-        case 1: {
-            if (addr >= 0x1000) {
-                return;
-            }
-            let base = addr << 2;
-            let r = (value >> 5) & 7;
-            let g = (value >> 2) & 7;
-            let b = value & 3;
-            r = (r << 5) | (r << 2) | (r >> 1);
-            g = (g << 5) | (g << 2) | (g >> 1);
-            b = (b << 6) | (b << 4) | (b << 2) | b;
-            IMAGE_DATA.data.set([r, g, b, 0xff], base);
-            break;
-        }
-    }
-}
-
-function set_video_mode(vm) {
-    console.log('setting VM to', vm);
-    let c = document.getElementById('canvas');
-    if (vm == 0) {
-        VIDEO_MODE = 0;
-        c.width = 128;
-        c.height = 128;
-        c.classList.value = "vm0";
-    } else if (vm == 1) {
-        VIDEO_MODE = 1;
-        c.width = 64;
-        c.height = 64;
-        c.classList.value = "vm1";
-    } else {
-        return;
-    }
-
-    IMAGE_DATA = CANVAS.createImageData(c.width, c.height);
-    for (let i = 0; i < 0x2000; i++) {
-        do_draw_set_vmem(i, VRAM[i]);
-    }
-
-    draw_buffer();
-}
 
 let FRAME_INTERVAL = -1;
 
@@ -388,16 +314,12 @@ function stop() {
 }
 
 function reset() {
-    VRAM.fill(0);
-    set_video_mode(0);
-    draw_buffer();
+    VIDEO.reset();
     CPU.reset();
 }
 
 function on_load() {
-    CANVAS = document.getElementById('canvas').getContext('2d');
-    CANVAS.imageSmoothingEnabled = false;
-    IMAGE_DATA = CANVAS.createImageData(128, 128);
+    VIDEO.on_load();
 
     document.addEventListener('keydown', function (ev) {
 
