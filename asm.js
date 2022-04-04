@@ -3,6 +3,11 @@ let ASM_EDITOR;
 function asm_load() {
   require(["vs/editor/editor.main"], function () {
     monaco.languages.register({ id: 'z80asm' });
+    monaco.languages.setLanguageConfiguration('z80asm', {
+      comments: {
+        lineComment: ';'
+      }
+    });
     monaco.languages.setMonarchTokensProvider('z80asm', MONARCH);
     monaco.languages.registerHoverProvider('z80asm', { provideHover: asm_hover_provider });
     monaco.languages.registerDocumentFormattingEditProvider('z80asm', {
