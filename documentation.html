@@ -201,7 +201,7 @@
       This way, each scanline is represented using <tt>$40</tt> bytes, and the entire <tt>$2000</tt> of video
       memory is used up by pixel data.
 
-    <h4>2.1.1 VM1 - 8bpp Linear</h4>
+    <h4>2.1.2 VM1 - 8bpp Linear</h4>
 
     <p>
       In this mode, screen resolution is 64x64. Each pixel can have one of 256 direct-mapped colors. Each byte in memory
@@ -233,6 +233,13 @@
         <td width="20px">0</td>
       </tr>
     </table>
+
+    <h4>2.1.3 VM2 - 1bpp Linear</h4>
+
+    <p>
+      In this mode, screen resolution is 256x256. Each pixel can have either black or white color. Each byte in memory
+      encodes the color of 8 adjacent pixels on one scanline: the most significant bit is the leftmost pixel, and the
+      least-significant bit is the rightmost one. If a bit is <tt>1</tt>, pixel is white, otherwise it is black.
 
   </div>
   <div class="page page-3">

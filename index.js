@@ -116,11 +116,11 @@ let CORE = {
     mem_read: function (addr) {
         addr = addr | 0;
         if (addr < 0x8000) {
-            return CART[addr];
+            return CART[addr] | 0;
         } else if (addr < 0xa000) {
-            return VIDEO.get_vmem(addr - 0x8000);
+            return VIDEO.get_vmem(addr - 0x8000) | 0;
         } else if (addr < 0xe000) {
-            return RAM[addr - 0xc000];
+            return RAM[addr - 0xc000] | 0;
         } else {
             return 0;
         }
@@ -141,9 +141,9 @@ let CORE = {
     io_read: function (port) {
         port = port & 0xff;
         if (port < 0x08) {
-            return KEYMAP[port];
+            return KEYMAP[port] | 0;
         } else if (port < 0x10) {
-            return VIDEO.get_vio(port - 0x08);
+            return VIDEO.get_vio(port - 0x08) | 0;
         } else {
             return 0;
         }

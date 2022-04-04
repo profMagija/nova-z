@@ -295,7 +295,7 @@ const DASM = function () {
 
             for (let j = 0; j < 6; j++) {
                 if (j < bytes.length) {
-                    s += bytes[j].toString(16).padStart(2, '0').toUpperCase() + " "
+                    s += (bytes[j] | 0).toString(16).padStart(2, '0').toUpperCase() + " "
                 } else {
                     s += "   ";
                 }
