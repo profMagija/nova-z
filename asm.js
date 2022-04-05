@@ -25,10 +25,14 @@ function asm_load() {
     let deb = -1;
     ASM_EDITOR.onDidChangeModelContent(ev => {
       localStorage.setItem('asm-:wip', ASM_EDITOR.getModel().getValue());
-      doc_saved_write();
+      ui_update_files();
       clearTimeout(deb);
       deb = setTimeout(do_compile, 1000);
     })
+
+    setTimeout(() => {
+      ASM_EDITOR.layout();
+    }, 0);
 
     setTimeout(() => {
       document.getElementById("assembler-loading").remove();
@@ -40,36 +44,17 @@ function asm_load() {
     console.log('resize');
     ASM_EDITOR.layout();
   });
+
+  ui_update_files();
 }
 
 let numCtrlSave = 0;
 let ctrlSaveTimeout = -1;
 
-function doc_saved_write(how_hard, clear_cb) {
-  let saveState = document.getElementById('save-status');
-  saveState.innerText = "Document Saved";
-  saveState.style.fontSize = (how_hard || 0) + 10 + "pt";
-  if (how_hard > 3) {
-    saveState.style.fontWeight = 'bold';
-  } else {
-    saveState.style.fontWeight = null;
-  }
-
-  clearTimeout(ctrlSaveTimeout);
-  ctrlSaveTimeout = setTimeout(() => {
-    saveState.innerText = "";
-    saveState.style.fontSize = "0pt";
-    saveState.style.fontWeight = null;
-    if (clear_cb) {
-      clear_cb();
-    }
-  }, 5000);
-}
-
 document.addEventListener('keydown', e => {
   if (e.code == "KeyS" && e.ctrlKey) {
     e.preventDefault();
-    doc_saved_write(numCtrlSave++, () => numCtrlSave = 0);
+    asm_save(false);
   }
 })
 
@@ -181,6 +166,114 @@ function do_assemble(do_run) {
   let hexx = ASM.hex(cc);
   load_hex(hexx, do_run);
   asm_setStatus("Assemble & load successful");
+}
+
+const FILE_ACTIONS = [
+  ['⨉', function (filename) {
+    if (confirm("Are you sure you want to delete '" + filename + "'?")) {
+      localStorage.removeItem('asm-$' + filename);
+      ui_update_files();
+    }
+  }],
+  ['⭳', function (filename) {
+    // TODO download
+  }]
+]
+
+function is_cur_file_modified() {
+  return localStorage.getItem('asm-:wip') != localStorage.getItem('asm-$' + localStorage.getItem('asm-cur-file-name'));
+}
+
+function ui_update_files() {
+  let eFiles = document.getElementById('asm-files');
+  eFiles.innerHTML = "";
+
+  let fileNames = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    let key = localStorage.key(i);
+    if (key.startsWith("asm-$")) {
+      fileNames.push(key.substring(5));
+    }
+  }
+
+  fileNames.sort();
+
+  for (let i = 0; i < fileNames.length; i++) {
+    let fileName = fileNames[i];
+    let modified = false;
+
+    let eDiv = eFiles.appendChild(document.createElement('div'));
+    eDiv.classList.add('asm-file');
+    eDiv.onclick = () => asm_open_file(fileName);
+    if (localStorage.getItem('asm-cur-file-name') == fileName) {
+      eDiv.classList.add('active');
+      if (is_cur_file_modified()) {
+        modified = true;
+      }
+    }
+
+    let eSpan = eDiv.appendChild(document.createElement('span'));
+    eSpan.innerText = fileName + (modified ? " *" : "");
+
+    for (let j = 0; j < FILE_ACTIONS.length; j++) {
+      let [text, action] = FILE_ACTIONS[j];
+      let eButton = eDiv.appendChild(document.createElement('button'));
+      eButton.innerText = text;
+      eButton.onclick = (e) => { e.stopPropagation(); action(fileName); }
+    }
+  }
+}
+
+function asm_new_file() {
+  if (is_cur_file_modified()) {
+    if (!confirm("You have unsaved changes, are you sure you want to proceed?")) {
+      return;
+    }
+  }
+
+  localStorage.removeItem('asm-cur-file-name');
+  localStorage.removeItem('asm-:wip');
+  ASM_EDITOR.getModel().setValue("");
+}
+
+function asm_save(new_name) {
+  let name;
+  if (new_name || !localStorage.getItem('asm-cur-file-name')) {
+    name = prompt("File name", localStorage.getItem('asm-cur-file-name') || "");
+    if (localStorage.getItem('asm-$' + name)) {
+      if (!confirm("File '" + name + "' already exists. Are you sure you want to overwrite?")) {
+        return;
+      }
+    }
+  } else {
+    name = localStorage.getItem('asm-cur-file-name');
+  }
+
+  localStorage.setItem('asm-$' + name, localStorage.getItem('asm-:wip'));
+  localStorage.setItem('asm-cur-file-name', name);
+  ui_update_files();
+}
+
+function asm_open_file(fileName) {
+  if (fileName == localStorage.getItem('asm-cur-file-name')) {
+    return;
+  }
+
+  if (is_cur_file_modified()) {
+    if (!confirm("You have unsaved changes, are you sure you want to continue?")) {
+      return;
+    }
+  }
+
+  let content = localStorage.getItem('asm-$' + fileName);
+
+  localStorage.setItem('asm-cur-file-name', fileName);
+  localStorage.setItem('asm-:wip', content);
+  ASM_EDITOR.getModel().setValue(content);
+}
+
+function asm_upload() {
+  // TODO upload
 }
 
 const MONARCH = {

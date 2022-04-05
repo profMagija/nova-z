@@ -47,11 +47,13 @@
       padding: 0;
 
       font-family: Arial, Helvetica, sans-serif;
+      width: 100vw;
+      height: 100%;
     }
 
     .tabbar {
       background-color: #111111;
-      width: 100%;
+      width: 100vw;
     }
 
     .tablink {
@@ -72,6 +74,11 @@
 
     .tablink.active {
       background-color: #444444;
+    }
+
+    .tabcontent {
+      height: calc(100% - 40px);
+      width: 100vw;
     }
 
     #canvas-container {
@@ -151,6 +158,65 @@
       color: white;
       font-size: 14px;
     }
+
+    #asm-table {
+      margin: 0;
+      border-collapse: collapse;
+      height: calc(100vh - 82px);
+      width: 100vw;
+    }
+
+    #asm-table>tbody>tr>td {
+      vertical-align: top;
+      padding: 0;
+    }
+
+    #asm-files {
+      width: 300px;
+
+      color: white;
+    }
+
+    .asm-file {
+      display: flex;
+      flex-direction: row;
+      text-overflow: ellipsis;
+      padding: 3px;
+    }
+
+    .asm-file:hover {
+      background-color: #555555;
+    }
+
+    .asm-file.active {
+      background-color: #333355;
+    }
+
+    .asm-file.active:hover {
+      background-color: #555588;
+    }
+
+    .asm-file>span {
+      display: flex;
+      flex-grow: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .asm-file>button {
+      width: 20px;
+      height: 20px;
+      margin-left: 3px;
+      border: none;
+    }
+
+    #asm-main-area {
+      width: calc(100vw - 300px);
+    }
+
+    .asm-files-col {
+      background-color: #444444;
+    }
   </style>
 </head>
 
@@ -192,12 +258,35 @@
         Assemble & load
       </button><button onclick="do_assemble(true)">
         Assemble & run
-      </button><span id="save-status"></span>
+      </button><span class="toolbox-separator">
+      </span><button onclick="asm_new_file()" style="margin-left: 16px">
+        New file
+      </button><button onclick="asm_save(false)">
+        Save
+      </button><button onclick="asm_save(true)">
+        Save As
+      </button><button onclick="asm_upload()">
+        Upload
+      </button>
     </div>
-    <span id="assembler-loading">Loading...</span>
-    <div name="assembler-input" id="assembler-input" style="width: 100%; max-width: 1000px; height: 600px;"></div>
-    <br>
-    <div id="assembler-output"></div>
+    <table id="asm-table">
+      <tr>
+        <td width="300px" class="asm-files-col">
+          <div id="asm-files">
+          </div>
+        </td>
+        <td>
+          <div id="asm-main-area">
+            <span id="assembler-loading">Loading...</span>
+            <div name="assembler-input" id="assembler-input" style="width: 100%; height: 600px;">
+            </div>
+            <br>
+            <div id="assembler-output"></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
   </div>
 
   <script type="text/javascript" src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
