@@ -2,7 +2,7 @@
 
 const CART = new Uint8Array(0x8000);
 
-const RAM = new Uint8Array(0x2000);
+const RAM = new Uint8Array(0x10000);
 const VRAM = new Uint8Array(0x2000);
 
 const BOOT_ROM = `
@@ -112,9 +112,33 @@ const SCANCODES = {
  * 
  */
 
+const KEY_STATE = {};
+
+const SPEC_KEY_MAP = {
+    0xFE: ["ShiftLeft", "KeyZ", "KeyX", "KeyC", "KeyV"],
+    0xFD: ["KeyA", "KeyS", "KeyD", "KeyF", "KeyG"],
+    0xFB: ["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT"],
+    0xF7: ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5"],
+    0xEF: ["Digit0", "Digit9", "Digit8", "Digit7", "Digit6"],
+    0xDF: ["KeyP", "KeyO", "KeyI", "KeyU", "KeyY"],
+    0xBF: ["Enter", "KeyL", "KeyK", "KeyJ", "KeyH"],
+    0x7F: ["Space", "AltLeft", "KeyM", "KeyN", "KeyB"],
+}
+
 let CORE = {
     mem_read: function (addr) {
         addr = addr | 0;
+
+        if (EMU_SPEC_MODE) {
+            if (addr < 0x4000) {
+                return CART[addr] | 0;
+            } else if (addr < 0x5B00) {
+                return VIDEO.get_vmem(addr - 0x4000) | 0;
+            } else {
+                return RAM[addr] | 0;
+            }
+        }
+
         if (addr < 0x8000) {
             return CART[addr] | 0;
         } else if (addr < 0xa000) {
@@ -128,6 +152,17 @@ let CORE = {
 
     mem_write: function (addr, value) {
         addr = addr | 0;
+
+        if (EMU_SPEC_MODE) {
+            if (addr < 0x4000) {
+            } else if (addr < 0x5B00) {
+                VIDEO.set_vmem(addr - 0x4000, value);
+            } else {
+                RAM[addr] = value;
+            }
+            return;
+        }
+
         if (addr < 0x8000) {
         } else if (addr < 0xa000) {
             VIDEO.set_vmem(addr - 0x8000, value);
@@ -139,6 +174,19 @@ let CORE = {
     },
 
     io_read: function (port) {
+        if (EMU_SPEC_MODE) {
+            if (!(port & 1)) {
+                let keys = SPEC_KEY_MAP[(port >> 8) & 0xFF];
+                if (!keys) return 0xff;
+                let retval = 0xff;
+                for (let i = 0; i < 5; i++) {
+                    if (KEY_STATE[keys[i]]) {
+                        retval &= ~(1 << i);
+                    }
+                }
+                return retval;
+            }
+        }
         port = port & 0xff;
         if (port < 0x08) {
             return KEYMAP[port] | 0;
@@ -163,9 +211,9 @@ let DEBUG_MODE = false;
 
 let CPU = new Z80(CORE);
 
-let FREQ_DYN = true;
-const FREQ_MAX = 20000000; // 20MHz
-const FREQ_MIN = 10000000; // 10MHz
+let FREQ_DYN = false;
+const FREQ_MAX = 3500000; // 3.5MHz
+const FREQ_MIN = 2000000; // 2MHz
 const FREQ_DLT = 100000; // 0.1MHz
 
 let FREQ = FREQ_MAX;
@@ -331,6 +379,7 @@ function stop() {
 }
 
 function reset() {
+    console.log('resetting');
     VIDEO.reset();
     CPU.reset();
 
@@ -343,6 +392,7 @@ function on_load() {
     VIDEO.on_load();
 
     document.addEventListener('keydown', function (ev) {
+        KEY_STATE[ev.code] = true;
 
         if (ev.code == "F9") {
             DEBUG_MODE = true;
@@ -363,18 +413,32 @@ function on_load() {
     });
 
     document.addEventListener('keyup', function (ev) {
+        KEY_STATE[ev.code] = false;
         let code = SCANCODES[ev.code];
         let idx = code >> 3;
         let bit = code & 7;
         KEYMAP[idx] &= ~(1 << bit);
     });
 
+    if (document.URL.indexOf("spec") >= 0) {
+        let sc = document.createElement('script');
+        sc.src = './spec_rom.js'
+        document.body.append(sc);
+        return;
+    }
+
     load_hex(BOOT_ROM);
     reset();
 }
 
 function load_hex(content, do_run) {
-    CART.fill(0);
+    console.log(content);
+
+    let dest = EMU_SPEC_MODE ? RAM : CART;
+    if (!EMU_SPEC_MODE) {
+        dest.fill(0);
+    }
+
     content.split("\n").forEach(s => {
         s = s.replace(/\s+/, '');
         if (s.length == 0) return;
@@ -383,9 +447,16 @@ function load_hex(content, do_run) {
         let len = Number.parseInt(s.substr(1, 2), 16);
         let loadpos = Number.parseInt(s.substr(3, 4), 16);
         for (let i = 0; i < len; i++) {
-            CART[loadpos + i] = Number.parseInt(s.substr(9 + 2 * i, 2), 16);
+            dest[loadpos + i] = Number.parseInt(s.substr(9 + 2 * i, 2), 16);
         }
     });
+
+    if (EMU_SPEC_MODE) {
+        if (do_run) {
+            openTab('tab-screen');
+        }
+        return;
+    }
 
     if (do_run) {
         openTab('tab-screen');
@@ -399,4 +470,13 @@ function load_hex(content, do_run) {
 
 function load_hex_file() {
     document.getElementById('hex-file').files[0].text().then(load_hex);
+}
+
+let EMU_SPEC_MODE = false;
+
+function emu_load_spectrum() {
+    CART.set(SPECTRUM_ROM, 0);
+    EMU_SPEC_MODE = true;
+    VIDEO.set_spectrum();
+    reset();
 }
